@@ -123,10 +123,12 @@ dd{margin:0;font-weight:500;font-size:14px}
 @keyframes sp{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){#mus.on .rec{animation:none}}
 #ytwrap{position:fixed;left:0;bottom:0;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none}
-#pop.hasimg{width:min(300px,calc(100vw - 16px))}
+#pop.hasimg,#pop.hasbn{width:min(300px,calc(100vw - 16px))}
 #pimg{display:none;width:100%;aspect-ratio:1/1;height:auto;object-fit:cover;object-position:50% 30%;background:var(--paper);border-bottom:1px solid var(--line)}
 #plt{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:20;max-width:calc(100vw - 32px);padding:8px 14px;font-size:12px;color:var(--paper);background:var(--ink);border-radius:2px;opacity:0;visibility:hidden;transform:translate(-50%,4px);transition:opacity .15s,transform .15s,visibility .15s;pointer-events:none}
 #plt.on{opacity:1;visibility:visible;transform:translate(-50%,0)}
+#adm .bnrow{margin-top:10px;padding-top:6px;border-top:1px dashed var(--line)}
+#adm .bnbox .bh{margin-top:12px;font-size:12px;font-weight:700;letter-spacing:.14em}
 #adm .pv img{display:block;max-width:100%;max-height:140px;margin-top:8px;border:1px solid var(--ink)}
 #adm input[type=range]{display:block;width:100%;margin:6px 0 0;accent-color:var(--accent)}
 #adm label b{color:var(--ink);letter-spacing:0}
@@ -154,6 +156,10 @@ dd{margin:0;font-weight:500;font-size:14px}
 #pop .bd{display:flex;align-items:center;gap:10px;padding:14px 12px}
 #pop .st{border:1.5px solid var(--accent);color:var(--accent);padding:1px 8px;font-weight:700;font-size:12px;letter-spacing:.2em;text-indent:.2em;white-space:nowrap}
 #pop mark{color:var(--ink);background:linear-gradient(transparent 30%,rgba(255,140,30,.62) 30%,rgba(255,140,30,.62) 94%,transparent 94%);padding:0 2px;margin:0 -1px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+#pbn{display:none;flex-direction:column;gap:8px;padding:0 12px 12px}
+#pbn.on{display:flex}
+#pbn a{display:block;line-height:0}
+#pbn img{display:block;max-width:100%;height:auto;margin:0 auto;border:1px solid var(--line);-webkit-user-drag:none}
 #pop .bd p{white-space:pre-line;overflow-wrap:anywhere;margin:0;font-size:12px;color:var(--line);letter-spacing:.08em}
 </style>
 </head>
@@ -243,7 +249,7 @@ dd{margin:0;font-weight:500;font-size:14px}
 <div id="ytwrap" aria-hidden="true"></div>
 <div id="plt" role="status"></div>
 
-<div id="pop" role="dialog" aria-label="메모"><div class="tb2"><div class="hd"><span id="pk"></span><b id="pt"></b></div><button id="x" aria-label="닫기">✕</button></div><img id="pimg" alt="" draggable="false"><div class="bd"><span class="st" id="ps">準備中</span><p id="pm">곧 열려요</p></div></div>
+<div id="pop" role="dialog" aria-label="메모"><div class="tb2"><div class="hd"><span id="pk"></span><b id="pt"></b></div><button id="x" aria-label="닫기">✕</button></div><img id="pimg" alt="" draggable="false"><div class="bd"><span class="st" id="ps">準備中</span><p id="pm">곧 열려요</p></div><div id="pbn"></div></div>
 
 <script>
 var NAME="MAISON 1203"; // 여기를 갠홈 이름으로 바꾸세요
@@ -359,8 +365,13 @@ function place(el,B){B=B||P;var r=el.getBoundingClientRect(),w=B.offsetWidth,h=B
  mv(x,y,B)}
 function hl(el,t){el.textContent='';var re=/\[\[([^\]]+?)\]\]|==([^=\n]+?)==/g,i=0,m;while((m=re.exec(t))){if(m.index>i)el.appendChild(document.createTextNode(t.slice(i,m.index)));var e=document.createElement('mark');e.textContent=m[1]||m[2];el.appendChild(e);i=re.lastIndex}if(i<t.length)el.appendChild(document.createTextNode(t.slice(i)))}
 var moved=0;
+function fixUrl(u){u=String(u||'').trim().slice(0,500);if(!u)return'';if(!/^https?:\/\//i.test(u)){if(/^[a-z][a-z0-9+.-]*:/i.test(u))return'';u='https://'+u.replace(/^\/+/,'')}return u}
+function renderBn(m){var box=document.getElementById('pbn'),b=(m&&m.bn||[]).filter(function(x){return x&&x.img});box.textContent='';
+ b.forEach(function(x){var im=document.createElement('img');im.alt='';im.draggable=false;im.onload=function(){if(cur&&!moved)place(cur)};im.src=x.img;var u=fixUrl(x.url);
+  if(u){var a=document.createElement('a');a.href=u;a.target='_blank';a.rel='noopener noreferrer';a.setAttribute('aria-label','배너 링크');a.appendChild(im);box.appendChild(a)}else box.appendChild(im)});
+ box.classList.toggle('on',b.length>0);P.classList.toggle('hasbn',b.length>0)}
 function open(k,g){moved=0;var d=D[k],m=MEMO[k]||{t:d[0],k:d[1],m:'',s:0};hl(document.getElementById('pt'),m.t);hl(document.getElementById('pk'),m.k);var ps=document.getElementById('ps'),pm=document.getElementById('pm');ps.style.display=m.s?'':'none';hl(pm,m.m);pm.style.display=m.m?'':'none';
- var im=document.getElementById('pimg');if(m.img){im.onload=function(){if(cur&&!moved)place(cur)};im.src=m.img;im.style.display='block';P.classList.add('hasimg')}else{im.onload=null;im.removeAttribute('src');im.style.display='none';P.classList.remove('hasimg')}
+ renderBn(m);var im=document.getElementById('pimg');if(m.img){im.onload=function(){if(cur&&!moved)place(cur)};im.src=m.img;im.style.display='block';P.classList.add('hasimg')}else{im.onload=null;im.removeAttribute('src');im.style.display='none';P.classList.remove('hasimg')}
  if(cur)cur.classList.remove('sel');cur=g||null;P.classList.add('on');
  if(cur){cur.classList.add('sel');place(cur)}}
 function shut(){P.classList.remove('on');if(cur){cur.classList.remove('sel');cur=null}}
@@ -379,7 +390,7 @@ defaults();
 function LS(a,b){try{if(b===undefined)return localStorage.getItem(a);if(b===null)localStorage.removeItem(a);else localStorage.setItem(a,b)}catch(e){}return null}
 function parse(x){try{return JSON.parse(x)}catch(e){return null}}
 function merge(o){if(!o||typeof o!=='object')return;KEYS.forEach(function(k){var v=o[k],m=MEMO[k];if(!v||typeof v!=='object')return;
- if(typeof v.t==='string')m.t=v.t.slice(0,60);if(typeof v.k==='string')m.k=v.k.slice(0,60);if(typeof v.m==='string')m.m=v.m.slice(0,300);if('s' in v)m.s=v.s?1:0;if(typeof v.img==='string'&&v.img.indexOf('data:image/')===0&&v.img.length<600000)m.img=v.img;else if(v.img==='')m.img=''});if(o._cfg&&typeof o._cfg.yt==='string')SETT.yt=o._cfg.yt.slice(0,300);if(o._cfg&&typeof o._cfg.vol==='number'&&isFinite(o._cfg.vol))SETT.vol=Math.max(0,Math.min(100,Math.round(o._cfg.vol)))}
+ if(typeof v.t==='string')m.t=v.t.slice(0,60);if(typeof v.k==='string')m.k=v.k.slice(0,60);if(typeof v.m==='string')m.m=v.m.slice(0,300);if('s' in v)m.s=v.s?1:0;if(Array.isArray(v.bn))m.bn=v.bn.slice(0,5).map(function(b){if(!b||typeof b!=='object'||typeof b.img!=='string'||b.img.indexOf('data:image/')!==0||b.img.length>=700000)return null;return{img:b.img,url:fixUrl(b.url)}}).filter(Boolean);if(typeof v.img==='string'&&v.img.indexOf('data:image/')===0&&v.img.length<600000)m.img=v.img;else if(v.img==='')m.img=''});if(o._cfg&&typeof o._cfg.yt==='string')SETT.yt=o._cfg.yt.slice(0,300);if(o._cfg&&typeof o._cfg.vol==='number'&&isFinite(o._cfg.vol))SETT.vol=Math.max(0,Math.min(100,Math.round(o._cfg.vol)))}
 merge(parse(LS('m1203_memo')));
 function syncPlan(){KEYS.forEach(function(k){var g=document.querySelector('.rm[data-k="'+k+'"]');if(!g)return;var m=MEMO[k],t=g.querySelector('text.t'),s=g.querySelector('text.k'),c=function(x){return String(x||'').replace(/\[\[|\]\]|==/g,'').replace(/\s*\n\s*/g,' ').trim()};
  if(t&&c(m.t))t.textContent=c(m.t);if(s&&c(m.k))s.textContent=c(m.k)})}
@@ -391,9 +402,9 @@ function renderForm(){var h='';KEYS.forEach(function(k){var m=MEMO[k];
   +'<label>제목<input type="text" data-f="t" maxlength="60" value="'+esc(m.t)+'"></label>'
   +'<label>부제<input type="text" data-f="k" maxlength="60" value="'+esc(m.k)+'"></label>'
   +'<label>메모 내용<textarea data-f="m" maxlength="300" rows="3">'+esc(m.m)+'</textarea></label>'
-  +'<label class="ck"><input type="checkbox" data-f="s"'+(m.s?' checked':'')+'> 準備中 도장 표시</label>'+(k==='r_gallery'?galHtml(m):'')+'</div>'});
- $('a_list').innerHTML=h;bindGal();$('a_yt').value=SETT.yt;$('a_vol').value=SETT.vol;$('a_volv').textContent=SETT.vol;applyVol()}
-function collect(){SETT.yt=$('a_yt').value.trim().slice(0,300);SETT.vol=+$('a_vol').value;document.querySelectorAll('#a_list .mc').forEach(function(c){var m=MEMO[c.dataset.k];
+  +'<label class="ck"><input type="checkbox" data-f="s"'+(m.s?' checked':'')+'> 準備中 도장 표시</label>'+(k==='r_gallery'?galHtml(m):'')+(k==='r_links'?bnHtml(m):'')+'</div>'});
+ $('a_list').innerHTML=h;bindGal();bindBn();$('a_yt').value=SETT.yt;$('a_vol').value=SETT.vol;$('a_volv').textContent=SETT.vol;applyVol()}
+function collect(){var bnr=document.querySelectorAll('#a_list .bnrow');bnr.forEach(function(r){var B=MEMO.r_links.bn||[],b=B[+r.dataset.i];if(b)b.url=fixUrl(r.querySelector('[data-bn=url]').value)});SETT.yt=$('a_yt').value.trim().slice(0,300);SETT.vol=+$('a_vol').value;document.querySelectorAll('#a_list .mc').forEach(function(c){var m=MEMO[c.dataset.k];
  c.querySelectorAll('[data-f]').forEach(function(i){var f=i.dataset.f;m[f]=f==='s'?(i.checked?1:0):i.value})})}
 function say(id,t,c){var e=$(id);e.textContent=t;e.className='ms'+(c?' '+c:'')}
 function ghRepo(){return($('a_repo').value||'').trim().replace(/^https?:\/\/github\.com\//,'').replace(/\.git$/,'').replace(/^\/|\/$/g,'')}
@@ -428,7 +439,16 @@ initAdmin();
 function allData(){var o={};KEYS.forEach(function(k){o[k]=MEMO[k]});o._cfg=SETT;return o}
 /* 갤러리 이미지 (1장, 줄여서 저장) */
 function galHtml(m){return'<label>이미지 (1장)<input type="file" accept="image/*" id="a_img"></label><div class="pv" id="a_pv">'+(m.img?'<img alt="" src="'+esc(m.img)+'">':'')+'</div><div class="row"><button class="btn" type="button" id="a_imgdel">이미지 삭제</button></div>'}
-function readImg(file,cb){var u=URL.createObjectURL(file),i=new Image();i.onload=function(){var M=720,sc=Math.min(1,M/Math.max(i.width,i.height)),w=Math.max(1,Math.round(i.width*sc)),h=Math.max(1,Math.round(i.height*sc)),c=document.createElement('canvas');c.width=w;c.height=h;var x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,w,h);x.drawImage(i,0,0,w,h);var q=.84,d=c.toDataURL('image/jpeg',q);while(d.length>420000&&q>.4){q-=.1;d=c.toDataURL('image/jpeg',q)}URL.revokeObjectURL(u);cb(d)};i.onerror=function(){URL.revokeObjectURL(u);cb(null)};i.src=u}
+function bnHtml(m){var B=m.bn||[],h='<div class="bnbox"><div class="bh">배너 (사진 + 링크, 최대 5개)</div>';
+ B.forEach(function(b,i){h+='<div class="bnrow" data-i="'+i+'"><div class="pv">'+(b.img?'<img alt="" src="'+esc(b.img)+'">':'')+'</div><label>배너 이미지<input type="file" accept="image/*" data-bn="file"></label><label>이동할 링크<input type="text" data-bn="url" maxlength="500" placeholder="https://…" value="'+esc(b.url||'')+'"></label><div class="row"><button class="btn" type="button" data-bn="del">배너 삭제</button></div></div>'});
+ return h+'<div class="row"><button class="btn" type="button" id="a_bnadd">배너 추가</button></div></div>'}
+function readBn(file,cb){if(file.size<=150000&&/^image\//.test(file.type)){var r=new FileReader();r.onload=function(){cb(String(r.result))};r.onerror=function(){cb(null)};r.readAsDataURL(file)}else readImg(file,cb,640,150000)}
+function bindBn(){var a=$('a_bnadd');if(!a)return;
+ a.onclick=function(){collect();var B=MEMO.r_links.bn=MEMO.r_links.bn||[];if(B.length>=5){say('a_ms2','배너는 5개까지 넣을 수 있어요.','er');return}B.push({img:'',url:''});renderForm()};
+ document.querySelectorAll('#a_list .bnrow').forEach(function(r){var i=+r.dataset.i;
+  r.querySelector('[data-bn=file]').onchange=function(){var f=this.files&&this.files[0];if(!f)return;readBn(f,function(u){if(!u){say('a_ms2','이미지를 읽을 수 없어요.','er');return}var b=(MEMO.r_links.bn||[])[i];if(!b)return;b.img=u;r.querySelector('.pv').innerHTML='<img alt="" src="'+esc(u)+'">';say('a_ms2','배너 이미지를 넣었어요. 링크를 적고 저장을 눌러 주세요.')})};
+  r.querySelector('[data-bn=del]').onclick=function(){collect();(MEMO.r_links.bn||[]).splice(i,1);renderForm();say('a_ms2','배너를 뺐어요. 저장을 눌러 주세요.')}})}
+function readImg(file,cb,MX,CAP){var u=URL.createObjectURL(file),i=new Image();i.onload=function(){var M=MX||720,sc=Math.min(1,M/Math.max(i.width,i.height)),w=Math.max(1,Math.round(i.width*sc)),h=Math.max(1,Math.round(i.height*sc)),c=document.createElement('canvas');c.width=w;c.height=h;var x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,w,h);x.drawImage(i,0,0,w,h);var q=.84,d=c.toDataURL('image/jpeg',q);while(d.length>(CAP||420000)&&q>.4){q-=.1;d=c.toDataURL('image/jpeg',q)}URL.revokeObjectURL(u);cb(d)};i.onerror=function(){URL.revokeObjectURL(u);cb(null)};i.src=u}
 function bindGal(){var f=$('a_img'),d=$('a_imgdel');if(!f)return;
  f.onchange=function(){var file=f.files&&f.files[0];if(!file)return;
   readImg(file,function(u){if(!u){say('a_ms2','이미지를 읽을 수 없어요.','er');return}MEMO.r_gallery.img=u;$('a_pv').innerHTML='<img alt="" src="'+esc(u)+'">';say('a_ms2','이미지를 넣었어요. 저장을 눌러 주세요.')})};
