@@ -154,7 +154,7 @@ dd{margin:0;font-weight:500;font-size:14px}
 #pop .bd{display:flex;align-items:center;gap:10px;padding:14px 12px}
 #pop .st{border:1.5px solid var(--accent);color:var(--accent);padding:1px 8px;font-weight:700;font-size:12px;letter-spacing:.2em;text-indent:.2em;white-space:nowrap}
 #pop mark{color:var(--ink);background:linear-gradient(transparent 30%,rgba(255,140,30,.62) 30%,rgba(255,140,30,.62) 94%,transparent 94%);padding:0 2px;margin:0 -1px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
-#pop .bd p{margin:0;font-size:12px;color:var(--line);letter-spacing:.08em}
+#pop .bd p{white-space:pre-line;overflow-wrap:anywhere;margin:0;font-size:12px;color:var(--line);letter-spacing:.08em}
 </style>
 </head>
 <body>
@@ -381,13 +381,16 @@ function parse(x){try{return JSON.parse(x)}catch(e){return null}}
 function merge(o){if(!o||typeof o!=='object')return;KEYS.forEach(function(k){var v=o[k],m=MEMO[k];if(!v||typeof v!=='object')return;
  if(typeof v.t==='string')m.t=v.t.slice(0,60);if(typeof v.k==='string')m.k=v.k.slice(0,60);if(typeof v.m==='string')m.m=v.m.slice(0,300);if('s' in v)m.s=v.s?1:0;if(typeof v.img==='string'&&v.img.indexOf('data:image/')===0&&v.img.length<600000)m.img=v.img;else if(v.img==='')m.img=''});if(o._cfg&&typeof o._cfg.yt==='string')SETT.yt=o._cfg.yt.slice(0,300);if(o._cfg&&typeof o._cfg.vol==='number'&&isFinite(o._cfg.vol))SETT.vol=Math.max(0,Math.min(100,Math.round(o._cfg.vol)))}
 merge(parse(LS('m1203_memo')));
+function syncPlan(){KEYS.forEach(function(k){var g=document.querySelector('.rm[data-k="'+k+'"]');if(!g)return;var m=MEMO[k],t=g.querySelector('text.t'),s=g.querySelector('text.k'),c=function(x){return String(x||'').replace(/\[\[|\]\]|==/g,'').replace(/\s*\n\s*/g,' ').trim()};
+ if(t&&c(m.t))t.textContent=c(m.t);if(s&&c(m.k))s.textContent=c(m.k)})}
+syncPlan();
 function $(i){return document.getElementById(i)}
 function esc(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 function renderForm(){var h='';KEYS.forEach(function(k){var m=MEMO[k];
  h+='<div class="mc" data-k="'+k+'"><div class="mh">'+esc(D[k][0])+'<i>'+esc(k.replace('r_','').toUpperCase())+'</i></div>'
   +'<label>제목<input type="text" data-f="t" maxlength="60" value="'+esc(m.t)+'"></label>'
   +'<label>부제<input type="text" data-f="k" maxlength="60" value="'+esc(m.k)+'"></label>'
-  +'<label>메모 내용<textarea data-f="m" maxlength="300" rows="2">'+esc(m.m)+'</textarea></label>'
+  +'<label>메모 내용<textarea data-f="m" maxlength="300" rows="3">'+esc(m.m)+'</textarea></label>'
   +'<label class="ck"><input type="checkbox" data-f="s"'+(m.s?' checked':'')+'> 準備中 도장 표시</label>'+(k==='r_gallery'?galHtml(m):'')+'</div>'});
  $('a_list').innerHTML=h;bindGal();$('a_yt').value=SETT.yt;$('a_vol').value=SETT.vol;$('a_volv').textContent=SETT.vol;applyVol()}
 function collect(){SETT.yt=$('a_yt').value.trim().slice(0,300);SETT.vol=+$('a_vol').value;document.querySelectorAll('#a_list .mc').forEach(function(c){var m=MEMO[c.dataset.k];
@@ -401,7 +404,7 @@ function initAdmin(){$('a_repo').value=LS('m1203_repo')||GH_REPO;$('a_path').val
  if(LS('m1203_tok'))$('a_tok').placeholder='●●●●●●●● (저장됨 · 바꾸려면 새로 입력)';
  renderForm();
  var repo=LS('m1203_repo')||GH_REPO;
- if(repo)fetch('https://raw.githubusercontent.com/'+repo+'/HEAD/'+(LS('m1203_path')||GH_PATH)+'?t='+Date.now()).then(function(r){return r.ok?r.json():null}).then(function(o){if(o){merge(o);renderForm()}}).catch(function(){})}
+ if(repo)fetch('https://raw.githubusercontent.com/'+repo+'/HEAD/'+(LS('m1203_path')||GH_PATH)+'?t='+Date.now()).then(function(r){return r.ok?r.json():null}).then(function(o){if(o){merge(o);syncPlan();renderForm()}}).catch(function(){})}
 $('a_savetok').onclick=function(){var t=$('a_tok').value.trim(),r=ghRepo();
  if(t)LS('m1203_tok',t);LS('m1203_repo',r||null);LS('m1203_path',ghPath());
  if(t){$('a_tok').value='';$('a_tok').placeholder='●●●●●●●● (저장됨 · 바꾸려면 새로 입력)'}
@@ -413,7 +416,7 @@ $('a_test').onclick=function(){var t=$('a_tok').value.trim()||LS('m1203_tok'),r=
  fetch('https://api.github.com/repos/'+r,{headers:ghHead(t)}).then(function(x){return x.json().then(function(j){
   if(x.ok)say('a_ms1','연결됐어요 · '+j.full_name+(j.permissions&&!j.permissions.push?' (쓰기 권한 없음)':''),j.permissions&&!j.permissions.push?'er':'ok');
   else say('a_ms1','실패했어요 ('+x.status+') '+(j.message||''),'er')})}).catch(function(){say('a_ms1','네트워크 오류예요.','er')})};
-$('a_save').onclick=function(){collect();var json=JSON.stringify(allData(),null,1);LS('m1203_memo',JSON.stringify(allData()));
+$('a_save').onclick=function(){collect();syncPlan();var json=JSON.stringify(allData(),null,1);LS('m1203_memo',JSON.stringify(allData()));
  var t=$('a_tok').value.trim()||LS('m1203_tok'),r=ghRepo()||LS('m1203_repo'),p=ghPath();
  if(!t||!r){say('a_ms2','이 브라우저에 저장했어요. (GitHub에 올리려면 위에 토큰과 저장소를 넣어 주세요)','ok');return}
  say('a_ms2','GitHub에 올리는 중…');var u='https://api.github.com/repos/'+r+'/contents/'+p.split('/').map(encodeURIComponent).join('/');
